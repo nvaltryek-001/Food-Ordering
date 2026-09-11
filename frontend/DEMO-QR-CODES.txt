@@ -1,0 +1,19 @@
+﻿# FoodSense AI — Demo QR Tables
+
+Table 01
+foodsense://table/1
+
+Table 02
+foodsense://table/2
+
+Table 03
+foodsense://table/3
+
+Table 04
+foodsense://table/4
+
+Table 05
+foodsense://table/5
+
+Flow:
+QR Scan → Table Number → Menu → Cart → Payment → Order

@@ -1,0 +1,250 @@
+﻿import json
+import re
+from pathlib import Path
+
+import numpy as np
+from fastapi import FastAPI
+from pydantic import BaseModel
+
+try:
+    from ai_edge_litert.interpreter import Interpreter
+except ImportError:
+    from tensorflow.lite.python.interpreter import Interpreter
+
+
+BASE_DIR = Path(__file__).resolve().parent
+MODEL_PATH = BASE_DIR / "models" / "rnn_model_food_review_analysis.tflite"
+VOCAB_PATH = BASE_DIR / "models" / "food_review_vocab_word_to_idx_dict.txt"
+
+print("--------------------------------------------")
+print("FoodSense AI")
+print("--------------------------------------------")
+
+# -----------------------------
+# Load vocabulary
+# -----------------------------
+with open(VOCAB_PATH, "r", encoding="utf-8") as f:
+    data = json.load(f)
+
+vocab = {str(k).lower(): float(v) for k, v in data.items()}
+
+print(f"Vocabulary: {len(vocab)}")
+
+# -----------------------------
+# Load TFLite model
+# -----------------------------
+interpreter = Interpreter(model_path=str(MODEL_PATH))
+interpreter.allocate_tensors()
+
+input_details = interpreter.get_input_details()
+output_details = interpreter.get_output_details()
+
+print(f"Model: {MODEL_PATH.exists()}")
+print(f"Input: {input_details}")
+print(f"Output: {output_details}")
+
+
+# -----------------------------
+# Request schema
+# -----------------------------
+class PredictRequest(BaseModel):
+    text: str
+    rating: float | None = None
+
+
+# -----------------------------
+# Exact Android preprocessing
+# -----------------------------
+def preprocess_android_exact(cleaned_review: str):
+
+    input_val = np.zeros((1, 500), dtype=np.float32)
+
+    words = re.split(r"\s+", cleaned_review.strip())
+
+    j = 499
+
+    for word in words:
+
+        if j < 0:
+            break
+
+        word_lower = word.lower()
+
+        if word_lower in vocab:
+            input_val[0][j] = vocab[word_lower]
+            j -= 1
+
+    left = -1
+    right = 499
+
+    for i in range(right + 1):
+
+        if input_val[0][i] != 0:
+            left = i
+            break
+
+    while left <= right:
+
+        temp = input_val[0][left]
+        input_val[0][left] = input_val[0][right]
+        input_val[0][right] = temp
+
+        left += 1
+        right -= 1
+
+    return input_val
+
+
+# -----------------------------
+# Run model
+# -----------------------------
+def run_model(text: str):
+
+    tensor = preprocess_android_exact(text)
+
+    interpreter.set_tensor(
+        input_details[0]["index"],
+        tensor
+    )
+
+    interpreter.invoke()
+
+    output = interpreter.get_tensor(
+        output_details[0]["index"]
+    )
+
+    raw = float(np.asarray(output).reshape(-1)[0])
+
+    return raw
+
+
+# -----------------------------
+# Sentiment mapping
+# -----------------------------
+def classify_sentiment(raw: float, rating=None):
+
+    # Strong model predictions
+    if raw >= 0.65:
+        sentiment = "positive"
+    elif raw <= 0.35:
+        sentiment = "negative"
+
+    # Middle probability = neutral
+    else:
+        sentiment = "neutral"
+
+    # Rating provides an additional signal for borderline cases
+    if rating is not None:
+
+        rating = float(rating)
+
+        if 1 <= rating <= 2 and raw < 0.60:
+            sentiment = "negative"
+
+        elif 4 <= rating <= 5 and raw > 0.40:
+            sentiment = "positive"
+
+        elif rating == 3 and 0.20 < raw < 0.80:
+            sentiment = "neutral"
+
+    # Confidence
+    if sentiment == "positive":
+        confidence = raw
+    elif sentiment == "negative":
+        confidence = 1.0 - raw
+    else:
+        confidence = 1.0 - abs(raw - 0.5) * 2
+
+    confidence = max(0.0, min(1.0, confidence))
+
+    return sentiment, confidence
+
+
+# -----------------------------
+# FastAPI
+# -----------------------------
+app = FastAPI(
+    title="FoodSense AI",
+    version="1.0.0"
+)
+
+
+@app.get("/health")
+def health():
+
+    return {
+        "status": "ok",
+        "aiMode": "tflite",
+        "modelExists": MODEL_PATH.exists(),
+        "vocabularySize": len(vocab)
+    }
+
+
+@app.post("/predict")
+def predict(request: PredictRequest):
+
+    text = str(request.text or "").strip()
+
+    if not text:
+
+        return {
+            "sentiment": "neutral",
+            "confidence": 0.0,
+            "raw": 0.5,
+            "mode": "tflite"
+        }
+
+    try:
+
+        raw = run_model(text)
+
+        sentiment, confidence = classify_sentiment(
+            raw,
+            request.rating
+        )
+
+        return {
+            "sentiment": sentiment,
+            "confidence": round(float(confidence), 4),
+            "raw": round(float(raw), 6),
+            "mode": "tflite"
+        }
+
+    except Exception as error:
+
+        print("Prediction error:", error)
+
+        return {
+            "sentiment": "neutral",
+            "confidence": 0.0,
+            "raw": 0.5,
+            "mode": "tflite-error"
+        }
+
+
+def analyze(text, rating=None):
+
+    raw = run_model(text)
+
+    sentiment, confidence = classify_sentiment(
+        raw,
+        rating
+    )
+
+    return {
+        "sentiment": sentiment,
+        "confidence": round(float(confidence), 4),
+        "raw": round(float(raw), 6),
+        "mode": "tflite"
+    }
+
+
+if __name__ == "__main__":
+
+    import uvicorn
+
+    uvicorn.run(
+        app,
+        host="127.0.0.1",
+        port=8000
+    )

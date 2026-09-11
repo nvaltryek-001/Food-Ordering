@@ -1,0 +1,11 @@
+﻿Amazon Fine Food Reviews
+Source:
+https://github.com/bansalkanav/Amazon_fine_food_review
+
+Dataset:
+568,454 food reviews
+
+The complete Reviews.csv is intentionally NOT downloaded
+automatically because it is hundreds of MB.
+
+Use it later for model training if required.

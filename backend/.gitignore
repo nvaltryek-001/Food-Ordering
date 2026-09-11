@@ -1,0 +1,12 @@
+﻿node_modules/
+.env
+.env.local
+logs/
+*.log
+
+data/processed/
+data/github/restaurant-sentiment-project/
+data/github/yelp-sample/
+
+.DS_Store
+Thumbs.db
