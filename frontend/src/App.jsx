@@ -1,4 +1,4 @@
-﻿import React, { useMemo, useState } from "react";
+﻿import React, { useEffect, useMemo, useState } from "react";
 import {
   BrowserRouter,
   Routes,
@@ -47,7 +47,10 @@ import {
   CircleUserRound
 } from "lucide-react";
 
+import QRScanner from "./components/QRScanner.jsx";
+import { parseTableQR } from "./components/qrUtils.js";
 import "./index.css";
+import { loginUser, registerUser, getFoods, createOrder } from "./services/api.js";
 
 /* ============================================================
    MOCK DATA
@@ -146,6 +149,44 @@ const initialFoods = [
 
 function App() {
   const [foods, setFoods] = useState(initialFoods);
+const [foodsLoading, setFoodsLoading] = useState(false);
+const [foodsError, setFoodsError] = useState("");
+
+useEffect(() => {
+  let active = true;
+
+  const loadFoods = async () => {
+    try {
+      setFoodsLoading(true);
+      setFoodsError("");
+
+      const result = await getFoods();
+
+      if (active && result?.success && Array.isArray(result.foods)) {
+        setFoods(result.foods);
+      }
+    } catch (error) {
+      console.error("Food API error:", error);
+
+      if (active) {
+        setFoodsError(
+          error?.response?.data?.message ||
+          "Unable to load live menu."
+        );
+      }
+    } finally {
+      if (active) {
+        setFoodsLoading(false);
+      }
+    }
+  };
+
+  loadFoods();
+
+  return () => {
+    active = false;
+  };
+}, []);
   const [cart, setCart] = useState([]);
   const [tableNumber, setTableNumber] = useState("12");
   const [orderStatus, setOrderStatus] = useState("placed");
@@ -504,7 +545,7 @@ function HomePage() {
 
           <div className="hero-stats">
             <div>
-              <strong>4.8★</strong>
+              <strong>4.8â˜…</strong>
               <span>Top Food Rating</span>
             </div>
 
@@ -623,146 +664,147 @@ function ProcessCard({ number, icon, title, text }) {
    ============================================================ */
 
 function LoginPage() {
+  const navigate = useNavigate();
+  const [email,setEmail]=useState("");
+  const [password,setPassword]=useState("");
+  const [error,setError]=useState("");
+  const [loading,setLoading]=useState(false);
+
+  const handleLogin=async(e)=>{
+    e.preventDefault();
+    setError("");
+    if(!email||!password){setError("Enter email and password.");return;}
+    try{
+      setLoading(true);
+      const result=await loginUser({email,password});
+      if(!result?.success) throw new Error(result?.message||"Login failed");
+      navigate(result.user?.role==="manager"?"/manager":"/menu");
+    }catch(err){
+      setError(err?.response?.data?.message||err?.message||"Login failed");
+    }finally{setLoading(false);}
+  };
+
   return (
     <div className="auth-page">
       <div className="auth-card">
-        <div className="auth-logo">
-          <ChefHat size={29} />
+        <div className="auth-header">
+          <div className="auth-logo">🍽️</div>
+          <h1>Welcome Back</h1>
+          <p>Login to your FoodSense AI account</p>
         </div>
 
-        <h1>Welcome back</h1>
+        {error&&<div className="auth-error">{error}</div>}
 
-        <p>
-          Login to continue your FoodSense AI experience.
-        </p>
-
-        <form onSubmit={(e) => e.preventDefault()}>
+        <form onSubmit={handleLogin}>
           <label>Email</label>
-
-          <div className="input-wrapper">
-            <User size={18} />
-            <input
-              type="email"
-              placeholder="you@example.com"
-            />
-          </div>
+          <input type="email" value={email}
+            onChange={e=>setEmail(e.target.value)}
+            placeholder="Enter your email" />
 
           <label>Password</label>
+          <input type="password" value={password}
+            onChange={e=>setPassword(e.target.value)}
+            placeholder="Enter your password" />
 
-          <div className="input-wrapper">
-            <CreditCard size={18} />
-            <input
-              type="password"
-              placeholder="••••••••"
-            />
-          </div>
-
-          <div className="form-row">
-            <label className="checkbox-label">
-              <input type="checkbox" />
-              Remember me
-            </label>
-
-            <button className="text-button">
-              Forgot Password?
-            </button>
-          </div>
-
-          <Link to="/menu" className="primary-button full-button">
-            Login
-          </Link>
+          <button type="submit" disabled={loading}>
+            {loading?"Logging in...":"Login"}
+          </button>
         </form>
 
-        <div className="divider">
-          <span>or continue with</span>
-        </div>
-
-        <div className="social-buttons">
-          <button>
-            <span className="google-icon">G</span>
-            Google
-          </button>
-
-          <button>
-            <span>📱</span>
-            Phone
-          </button>
-        </div>
-
-        <p className="auth-footer">
-          New here? <Link to="/register">Create an account</Link>
+        <p className="auth-switch">
+          Don't have an account? <Link to="/register">Create Account</Link>
         </p>
       </div>
     </div>
   );
 }
-
-/* ============================================================
-   REGISTER
-   ============================================================ */
-
 function RegisterPage() {
+  const navigate = useNavigate();
+  const [name,setName]=useState("");
+  const [email,setEmail]=useState("");
+  const [password,setPassword]=useState("");
+  const [error,setError]=useState("");
+  const [loading,setLoading]=useState(false);
+
+  const handleRegister=async(e)=>{
+    e.preventDefault();
+    setError("");
+    if(!name||!email||!password){setError("Fill all fields.");return;}
+    if(password.length<6){setError("Password must be at least 6 characters.");return;}
+
+    try{
+      setLoading(true);
+      const result=await registerUser({name,email,password});
+      if(!result?.success) throw new Error(result?.message||"Registration failed");
+      navigate("/menu");
+    }catch(err){
+      setError(err?.response?.data?.message||err?.message||"Registration failed");
+    }finally{setLoading(false);}
+  };
+
   return (
     <div className="auth-page">
       <div className="auth-card">
-        <div className="auth-logo">
-          <ChefHat size={29} />
+        <div className="auth-header">
+          <div className="auth-logo">🍽️</div>
+          <h1>Create Account</h1>
+          <p>Join FoodSense AI today</p>
         </div>
 
-        <h1>Create your account</h1>
+        {error&&<div className="auth-error">{error}</div>}
 
-        <p>
-          Join FoodSense AI and enjoy smarter food ordering.
-        </p>
-
-        <form onSubmit={(e) => e.preventDefault()}>
+        <form onSubmit={handleRegister}>
           <label>Full Name</label>
-
-          <div className="input-wrapper">
-            <User size={18} />
-            <input placeholder="Your name" />
-          </div>
+          <input type="text" value={name}
+            onChange={e=>setName(e.target.value)}
+            placeholder="Enter your name" />
 
           <label>Email</label>
-
-          <div className="input-wrapper">
-            <MessageSquareText size={18} />
-            <input placeholder="you@example.com" />
-          </div>
+          <input type="email" value={email}
+            onChange={e=>setEmail(e.target.value)}
+            placeholder="Enter your email" />
 
           <label>Password</label>
+          <input type="password" value={password}
+            onChange={e=>setPassword(e.target.value)}
+            placeholder="Create a password" />
 
-          <div className="input-wrapper">
-            <CreditCard size={18} />
-            <input
-              type="password"
-              placeholder="Create password"
-            />
-          </div>
-
-          <Link to="/login" className="primary-button full-button">
-            Create Account
-          </Link>
+          <button type="submit" disabled={loading}>
+            {loading?"Creating Account...":"Create Account"}
+          </button>
         </form>
 
-        <p className="auth-footer">
-          Already have an account?{" "}
-          <Link to="/login">Login</Link>
+        <p className="auth-switch">
+          Already have an account? <Link to="/login">Login</Link>
         </p>
       </div>
     </div>
   );
 }
-
-/* ============================================================
-   QR SCAN
-   ============================================================ */
-
 function ScanQRPage({ tableNumber, setTableNumber }) {
   const navigate = useNavigate();
+  const [scanError, setScanError] = useState("");
+  const [scanning, setScanning] = useState(false);
 
-  const handleScan = () => {
-    navigate("/menu");
+  const handleScan = (decodedText) => {
+    try {
+      const result = parseTableQR(decodedText);
+
+      if (!result?.tableNumber) {
+        throw new Error("Invalid table QR code");
+      }
+
+      setTableNumber(String(result.tableNumber));
+      setScanError("");
+      setScanning(false);
+
+      navigate("/menu");
+    } catch (error) {
+      console.error("QR scan error:", error);
+      setScanError(
+        "Invalid QR code. Please scan a FoodSense table QR code."
+      );
+    }
   };
 
   return (
@@ -781,25 +823,64 @@ function ScanQRPage({ tableNumber, setTableNumber }) {
 
         <p>
           Scan the QR code placed on your restaurant table
-          to view the menu.
+          to automatically open the menu.
         </p>
 
-        <div className="qr-box">
-          <div className="qr-pattern">
-            <div className="qr-square one"></div>
-            <div className="qr-square two"></div>
-            <div className="qr-square three"></div>
+        {scanning ? (
+          <div>
+            <QRScanner onScan={handleScan} />
 
-            <span>QR</span>
+            <button
+              className="outline-button full-button"
+              onClick={() => {
+                setScanning(false);
+                setScanError("");
+              }}
+              style={{ marginTop: "14px" }}
+            >
+              Cancel Scanner
+            </button>
           </div>
+        ) : (
+          <>
+            <div className="qr-box">
+              <div className="qr-pattern">
+                <div className="qr-square one"></div>
+                <div className="qr-square two"></div>
+                <div className="qr-square three"></div>
+                <span>QR</span>
+              </div>
 
-          <ScanLine className="scan-line" size={210} />
-        </div>
+              <ScanLine className="scan-line" size={210} />
+            </div>
 
-        <button className="primary-button full-button" onClick={handleScan}>
-          <ScanLine size={18} />
-          Simulate QR Scan
-        </button>
+            <button
+              className="primary-button full-button"
+              onClick={() => {
+                setScanError("");
+                setScanning(true);
+              }}
+            >
+              <ScanLine size={18} />
+              Scan Real QR Code
+            </button>
+          </>
+        )}
+
+        {scanError && (
+          <div
+            style={{
+              marginTop: "14px",
+              padding: "12px",
+              borderRadius: "12px",
+              background: "#fff1f2",
+              color: "#be123c",
+              fontSize: "14px"
+            }}
+          >
+            {scanError}
+          </div>
+        )}
 
         <div className="manual-table">
           <span>Table Number</span>
@@ -808,6 +889,7 @@ function ScanQRPage({ tableNumber, setTableNumber }) {
             <input
               value={tableNumber}
               onChange={(e) => setTableNumber(e.target.value)}
+              placeholder="Enter table number"
             />
 
             <button onClick={() => navigate("/menu")}>
@@ -819,7 +901,6 @@ function ScanQRPage({ tableNumber, setTableNumber }) {
     </div>
   );
 }
-
 /* ============================================================
    MENU
    ============================================================ */
@@ -900,7 +981,7 @@ function MenuPage({ foods, addToCart }) {
       <div className="food-grid">
         {rankedFoods.map((food, index) => (
           <FoodCard
-            key={food.id}
+            key={food._id || food.id}
             food={food}
             rank={index + 1}
             addToCart={addToCart}
@@ -948,7 +1029,7 @@ function FoodCard({ food, rank, addToCart }) {
 
         <div className="food-bottom">
           <strong className="food-price">
-            ₹{food.price}
+            â‚¹{food.price}
           </strong>
 
           <button
@@ -970,9 +1051,11 @@ function FoodCard({ food, rank, addToCart }) {
 
 function FoodDetailsPage({ foods, addToCart }) {
   const { pathname } = useLocation();
-  const id = Number(pathname.split("/").pop());
+  const id = pathname.split("/").pop();
 
-  const food = foods.find((item) => item.id === id);
+  const food = foods.find(
+    (item) => String(item._id || item.id) === String(id)
+  );
 
   if (!food) {
     return (
@@ -985,6 +1068,11 @@ function FoodDetailsPage({ foods, addToCart }) {
     );
   }
 
+  const tags = food.tags || [
+    food.category,
+    food.score >= 4.5 ? "Highly Rated" : "Popular"
+  ];
+
   return (
     <div className="detail-container">
       <Link to="/menu" className="back-link">
@@ -994,7 +1082,13 @@ function FoodDetailsPage({ foods, addToCart }) {
 
       <div className="food-detail">
         <div className="detail-image">
-          <img src={food.image} alt={food.name} />
+          <img
+            src={food.image}
+            alt={food.name}
+            onError={(e) => {
+              e.currentTarget.style.display = "none";
+            }}
+          />
 
           <button className="heart-button large">
             <Heart size={22} />
@@ -1016,7 +1110,7 @@ function FoodDetailsPage({ foods, addToCart }) {
 
           <div className="loved-badge">
             <ThumbsUp size={15} />
-            Most Loved
+            {food.score >= 4.5 ? "Most Loved" : "Popular Choice"}
           </div>
 
           <p className="detail-description">
@@ -1024,7 +1118,7 @@ function FoodDetailsPage({ foods, addToCart }) {
           </p>
 
           <div className="tag-list">
-            {food.tags.map((tag) => (
+            {tags.map((tag) => (
               <span key={tag}>{tag}</span>
             ))}
           </div>
@@ -1048,18 +1142,18 @@ function FoodDetailsPage({ foods, addToCart }) {
             </div>
 
             <div className="review-item">
-              <div className="review-avatar">RK</div>
+              <div className="review-avatar">AI</div>
 
               <div>
-                <strong>Rahul K</strong>
+                <strong>FoodSense Customer</strong>
 
                 <div className="stars">
                   ★★★★★
                 </div>
 
                 <p>
-                  Amazing food! Fresh and tasty. Highly
-                  recommended.
+                  Customer feedback is continuously analyzed
+                  by FoodSense AI to improve food rankings.
                 </p>
               </div>
             </div>
@@ -1073,7 +1167,6 @@ function FoodDetailsPage({ foods, addToCart }) {
 /* ============================================================
    CART
    ============================================================ */
-
 function CartPage({
   cart,
   increaseQuantity,
@@ -1120,7 +1213,7 @@ function CartPage({
                 <div className="cart-item-info">
                   <span>{item.category}</span>
                   <h3>{item.name}</h3>
-                  <strong>₹{item.price}</strong>
+                  <strong>â‚¹{item.price}</strong>
                 </div>
 
                 <div className="quantity-control">
@@ -1154,19 +1247,19 @@ function CartPage({
 
             <div className="summary-line">
               <span>Items ({cart.length})</span>
-              <strong>₹{subtotal}</strong>
+              <strong>â‚¹{subtotal}</strong>
             </div>
 
             <div className="summary-line">
               <span>Delivery Charge</span>
-              <strong>₹{delivery}</strong>
+              <strong>â‚¹{delivery}</strong>
             </div>
 
             <div className="summary-divider"></div>
 
             <div className="summary-total">
               <span>Total</span>
-              <strong>₹{total}</strong>
+              <strong>â‚¹{total}</strong>
             </div>
 
             <Link
@@ -1187,19 +1280,74 @@ function CartPage({
    CHECKOUT
    ============================================================ */
 
-function CheckoutPage({ cart, setOrderStatus }) {
+function CheckoutPage({ cart, tableNumber, setOrderStatus }) {
   const navigate = useNavigate();
 
+  const [paymentMethod, setPaymentMethod] = useState("upi");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
   const subtotal = cart.reduce(
-    (sum, item) => sum + item.price * item.quantity,
+    (sum, item) => sum + Number(item.price) * item.quantity,
     0
   );
 
-  const total = subtotal + 20;
+  const delivery = cart.length > 0 ? 20 : 0;
+  const total = subtotal + delivery;
 
-  const placeOrder = () => {
-    setOrderStatus("placed");
-    navigate("/order-confirmed");
+  const placeOrder = async () => {
+    if (!cart.length) {
+      setError("Your cart is empty.");
+      return;
+    }
+
+    const token = localStorage.getItem("foodsense_token");
+
+    if (!token) {
+      navigate("/login");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError("");
+
+      const result = await createOrder({
+        tableNumber: tableNumber || "12",
+        paymentMethod,
+        paymentStatus: "paid",
+        items: cart.map((item) => ({
+          foodId: item._id || item.foodId || item.id,
+          quantity: item.quantity
+        }))
+      });
+
+      if (!result?.success) {
+        throw new Error(
+          result?.message || "Unable to place order."
+        );
+      }
+
+      // Save real order for confirmation page
+      localStorage.setItem(
+        "foodsense_last_order",
+        JSON.stringify(result.order)
+      );
+
+      setOrderStatus(result.order?.status || "placed");
+
+      navigate("/order-confirmed");
+    } catch (err) {
+      console.error("Order placement error:", err);
+
+      setError(
+        err?.response?.data?.message ||
+        err?.message ||
+        "Unable to place order."
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -1210,15 +1358,28 @@ function CheckoutPage({ cart, setOrderStatus }) {
       </Link>
 
       <div className="checkout-header">
-        <span className="section-eyebrow">SECURE CHECKOUT</span>
+        <span className="section-eyebrow">
+          SECURE CHECKOUT
+        </span>
         <h1>Payment</h1>
       </div>
+
+      {error && (
+        <div className="auth-error">
+          {error}
+        </div>
+      )}
 
       <div className="payment-card">
         <h2>Choose Payment Method</h2>
 
         <label className="payment-option selected">
-          <input type="radio" defaultChecked name="payment" />
+          <input
+            type="radio"
+            name="payment"
+            checked={paymentMethod === "upi"}
+            onChange={() => setPaymentMethod("upi")}
+          />
           <div>
             <strong>UPI</strong>
             <span>Google Pay / PhonePe / Paytm</span>
@@ -1227,7 +1388,12 @@ function CheckoutPage({ cart, setOrderStatus }) {
         </label>
 
         <label className="payment-option">
-          <input type="radio" name="payment" />
+          <input
+            type="radio"
+            name="payment"
+            checked={paymentMethod === "card"}
+            onChange={() => setPaymentMethod("card")}
+          />
           <div>
             <strong>Debit / Credit Card</strong>
             <span>Secure card payment</span>
@@ -1236,7 +1402,12 @@ function CheckoutPage({ cart, setOrderStatus }) {
         </label>
 
         <label className="payment-option">
-          <input type="radio" name="payment" />
+          <input
+            type="radio"
+            name="payment"
+            checked={paymentMethod === "cash"}
+            onChange={() => setPaymentMethod("cash")}
+          />
           <div>
             <strong>Cash on Delivery</strong>
             <span>Pay when served</span>
@@ -1252,14 +1423,17 @@ function CheckoutPage({ cart, setOrderStatus }) {
         <button
           className="primary-button full-button"
           onClick={placeOrder}
+          disabled={loading}
         >
           <CreditCard size={19} />
-          Pay ₹{total} & Place Order
+          {loading
+            ? "Placing Order..."
+            : `Pay ₹${total} & Place Order`}
         </button>
 
         <div className="secure-note">
           <CheckCircle2 size={16} />
-          Your payment information is secure.
+          Demo payment — no real money is charged.
         </div>
       </div>
     </div>
@@ -1269,7 +1443,6 @@ function CheckoutPage({ cart, setOrderStatus }) {
 /* ============================================================
    ORDER CONFIRMED
    ============================================================ */
-
 function OrderConfirmedPage({ tableNumber }) {
   return (
     <div className="success-page">
@@ -1596,14 +1769,14 @@ function AIAnalysisResult({ rating, text }) {
         <div className="score-update">
           <div>
             <span>Previous Food Score</span>
-            <strong>4.5 ★</strong>
+            <strong>4.5 â˜…</strong>
           </div>
 
           <ArrowRight size={27} />
 
           <div>
             <span>New Food Score</span>
-            <strong>4.7 ★</strong>
+            <strong>4.7 â˜…</strong>
           </div>
         </div>
 
@@ -1875,7 +2048,7 @@ function ManagerDashboard({ foods }) {
         <MetricCard
           icon={<IndianRupee />}
           title="Total Revenue"
-          value="₹12,450"
+          value="â‚¹12,450"
           change="+8%"
         />
 
@@ -1968,7 +2141,7 @@ function ManagerDashboard({ foods }) {
               .sort((a, b) => b.score - a.score)
               .slice(0, 4)
               .map((food, index) => (
-                <div className="top-food" key={food.id}>
+                <div className="top-food" key={food._id || food.id}>
                   <span className="food-rank">
                     #{index + 1}
                   </span>
@@ -1983,7 +2156,7 @@ function ManagerDashboard({ foods }) {
                   </div>
 
                   <strong className="food-score">
-                    ★ {food.score}
+                    â˜… {food.score}
                   </strong>
                 </div>
               ))}
@@ -2045,10 +2218,10 @@ function MetricCard({ icon, title, value, change }) {
 
 function OrderTable() {
   const orders = [
-    ["#1234", "Rahul K", "Chicken Burger x1", "₹149", "Served"],
-    ["#1235", "Sneha P", "Pizza x1, Coke x1", "₹289", "Preparing"],
-    ["#1236", "Aditya S", "Biryani x1", "₹199", "Accepted"],
-    ["#1237", "Priya M", "Burger x2", "₹298", "Placed"]
+    ["#1234", "Rahul K", "Chicken Burger x1", "â‚¹149", "Served"],
+    ["#1235", "Sneha P", "Pizza x1, Coke x1", "â‚¹289", "Preparing"],
+    ["#1236", "Aditya S", "Biryani x1", "â‚¹199", "Accepted"],
+    ["#1237", "Priya M", "Burger x2", "â‚¹298", "Placed"]
   ];
 
   return (
@@ -2099,7 +2272,7 @@ function Feedback({ name, text, rating }) {
         <strong>{name}</strong>
 
         <div className="stars">
-          {"★".repeat(Number(rating))}
+          {"â˜…".repeat(Number(rating))}
         </div>
 
         <p>{text}</p>
@@ -2179,7 +2352,7 @@ function ManagerOrders({ setOrderStatus }) {
               </div>
             </div>
 
-            <strong>₹{order.amount}</strong>
+            <strong>â‚¹{order.amount}</strong>
 
             <span className="status-pill">
               {order.status}
@@ -2224,7 +2397,7 @@ function ManagerMenu({ foods }) {
         {[...foods]
           .sort((a, b) => b.score - a.score)
           .map((food, index) => (
-            <div className="manager-food-card" key={food.id}>
+            <div className="manager-food-card" key={food._id || food.id}>
               <div className="manager-food-image">
                 <img src={food.image} alt={food.name} />
 
@@ -2239,7 +2412,7 @@ function ManagerMenu({ foods }) {
 
                 <div className="food-score-row">
                   <strong>
-                    ★ {food.score}
+                    â˜… {food.score}
                   </strong>
 
                   <span>
@@ -2281,7 +2454,7 @@ function ManagerReviews() {
           <strong>4.3</strong>
 
           <div className="stars large-stars">
-            ★★★★★
+            â˜…â˜…â˜…â˜…â˜…
           </div>
 
           <small>542 customer reviews</small>
@@ -2374,7 +2547,7 @@ function ManagerAnalytics() {
 
         <div className="analytics-card">
           <span>Average Food Score</span>
-          <strong>4.3 ★</strong>
+          <strong>4.3 â˜…</strong>
           <small>+0.2 improvement</small>
         </div>
 
@@ -2428,3 +2601,10 @@ function ManagerAnalytics() {
 }
 
 export default App;
+
+
+
+
+
+
+

@@ -1,52 +1,43 @@
-﻿export function getTableFromQR(value) {
+﻿export function parseTableQR(decodedText) {
+  const text = String(decodedText || "").trim();
 
-  if (!value) {
-    return null;
+  if (!text) {
+    throw new Error("Empty QR code");
   }
 
-  try {
-
-    const url = new URL(value);
-
-    return (
-      url.searchParams.get("table") ||
-      url.searchParams.get("tableNumber")
-    );
-
-  } catch {
-
-    const match =
-      String(value).match(
-        /(?:table|tableNumber)[=:\/-]+([A-Za-z0-9_-]+)/i
-      );
-
-    return match ? match[1] : value;
-
-  }
-}
-
-
-export function saveTableFromQR(value) {
-
-  const table = getTableFromQR(value);
-
-  if (table) {
-
-    localStorage.setItem(
-      "foodsense_table",
-      table
-    );
-
-  }
-
-  return table;
-}
-
-
-export function getCurrentTable() {
-
-  return localStorage.getItem(
-    "foodsense_table"
+  const foodSenseMatch = text.match(
+    /^foodsense:\/\/table\/([A-Za-z0-9_-]+)\/?$/
   );
 
+  if (foodSenseMatch) {
+    return {
+      tableNumber: foodSenseMatch[1],
+      raw: text,
+      valid: true,
+    };
+  }
+
+  const tableMatch = text.match(
+    /^table[\/\s_-]*([A-Za-z0-9_-]+)$/i
+  );
+
+  if (tableMatch) {
+    return {
+      tableNumber: tableMatch[1],
+      raw: text,
+      valid: true,
+    };
+  }
+
+  throw new Error("Invalid FoodSense table QR");
+}
+
+export function createTableQR(tableNumber) {
+  const value = String(tableNumber || "").trim();
+
+  if (!value) {
+    throw new Error("Table number is required");
+  }
+
+  return `foodsense://table/${value}`;
 }

@@ -1,18 +1,34 @@
-﻿# FoodSense AI Deployment
+﻿# 🚀 FoodSense AI — Production Deployment
+
+## Architecture
+
+Vercel
+  ↓
+React Frontend
+  ↓
+Render
+  ↓
+Node / Express API
+  ↓
+MongoDB Atlas
+  ↓
+AI Service
+
+---
 
 ## 1. MongoDB Atlas
 
-Create a MongoDB Atlas database.
+Create database:
 
-Set:
+foodsense_ai
 
-MONGO_URI=mongodb+srv://USERNAME:PASSWORD@CLUSTER/foodsense_ai
+Production variable:
 
-Do NOT deploy:
+MONGO_URI=mongodb+srv://...
 
-mongodb://127.0.0.1:27017/foodsense_ai
+---
 
-## 2. Backend - Render
+## 2. Render Backend
 
 Root directory:
 
@@ -26,26 +42,24 @@ Start:
 
 npm start
 
-Environment:
+Environment variables:
 
-PORT=5000
 NODE_ENV=production
-MONGO_URI=YOUR_ATLAS_URI
-JWT_SECRET=YOUR_LONG_RANDOM_SECRET
-CLIENT_URL=YOUR_VERCEL_URL
-AI_SERVICE_URL=YOUR_AI_SERVICE_URL
+PORT=10000
+MONGO_URI=...
+JWT_SECRET=...
+CLIENT_URL=https://YOUR-VERCEL-DOMAIN.vercel.app
+AI_SERVICE_URL=https://YOUR-AI-SERVICE-URL
 
-Health:
+---
 
-/api/health
-
-## 3. Frontend - Vercel
+## 3. Vercel Frontend
 
 Root directory:
 
 frontend
 
-Build:
+Build command:
 
 npm run build
 
@@ -53,33 +67,22 @@ Output:
 
 dist
 
-Environment:
+Environment variable:
 
 VITE_API_URL=https://YOUR-RENDER-BACKEND.onrender.com/api
 
-## 4. Important
+---
 
-Never put MongoDB password, JWT secret, Gemini/API keys or other secrets inside frontend code.
+## 4. CORS
 
-## 5. Final production flow
+CLIENT_URL must exactly match the Vercel frontend URL.
 
-Customer
-  -> Login
-  -> Scan QR
-  -> Menu
-  -> Cart
-  -> Checkout
-  -> Order
+---
 
-Manager
-  -> Login
-  -> Accept
-  -> Preparing
-  -> Served
+## 5. Never deploy:
 
-Customer
-  -> Review
-  -> RNN sentiment
-  -> Food score
-  -> Ranking
-
+.env
+MongoDB passwords
+JWT secrets
+Gemini/API keys
+local database URLs
