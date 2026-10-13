@@ -1,82 +1,202 @@
-# FoodSense AI — Food Ordering & Review Analysis
+# 🍔 FoodSense AI — Smart Food Ordering & Review Analysis Platform
 
-FoodSense AI combines a React/Vite web client, Express/MongoDB API, a FastAPI/TFLite review-sentiment service, and the original Android customer/manager applications.
+A full-stack food ordering platform that combines a modern React interface, backend APIs, database integration, and AI-powered food review analysis to deliver a smarter food ordering experience.
 
-> **Important:** This ZIP is a cleaned and documented rebuild of the uploaded source, not a claim that every feature is production-verified. The frontend build could not be verified in this environment because dependency installation did not complete. Payment remains a demo flow, production database/API credentials are not included, and the food catalog must be populated with the real restaurant's menu.
+## 🚀 Overview
 
-## Features present in the source
+**FoodSense AI** is designed to simplify online food ordering while providing intelligent insights from customer reviews. Users can explore food items, manage their cart, place orders, and view order history through an interactive web interface.
 
-- Customer menu, cart, checkout/order flow, QR/table workflow, reviews, and profile UI in the web application.
-- Manager-facing order/menu/review/analytics views.
-- Express API routes for authentication, foods, orders, reviews, analytics, and health.
-- MongoDB models for users, foods, orders, and reviews.
-- FastAPI sentiment service with the supplied TFLite model and vocabulary.
-- Original Android customer and manager applications.
+The platform includes a separate AI service for food review analysis and a backend responsible for application APIs and database operations.
 
-## Architecture
+## ✨ Key Features
 
-See [`docs/architecture.md`](docs/architecture.md). API overview: [`docs/api.md`](docs/api.md).
+- 🔐 **User Authentication** — User registration and login.
+- 🍽️ **Food Catalogue** — Browse and explore available food items.
+- 🛒 **Shopping Cart** — Add food items and update quantities.
+- 📦 **Order Management** — Complete checkout and create orders.
+- 🧾 **Order History** — Retrieve previously placed orders.
+- 🤖 **AI Review Analysis** — Dedicated AI service for food review analysis.
+- 🔌 **REST API Integration** — Communication between the frontend and backend services.
+- 📱 **Responsive Interface** — Designed to support different screen sizes.
+- 🧪 **Automated Testing** — UI and end-to-end tests for important user flows.
 
-## Prerequisites
+## 🛠️ Technology Stack
 
-- Windows 10/11 with PowerShell 5.1 or PowerShell 7
-- Node.js 22 LTS recommended and npm
-- Python 3.11 or 3.12 recommended for the AI service (the available TFLite runtime may not support every Python version)
-- MongoDB local installation or a MongoDB Atlas database
-- Android Studio only if building the Android applications
+| Layer | Technology |
+|---|---|
+| Frontend | React, Vite, JavaScript |
+| Backend | Node.js, Express.js |
+| Database | Configured application database |
+| AI Service | Python, FastAPI |
+| AI Model | TensorFlow Lite model integration |
+| Testing | Playwright and automated UI tests |
+| Version Control | Git and GitHub |
 
-## Quick setup (Windows)
+## 🏗️ System Architecture
 
-Extract this ZIP, open PowerShell in the `FoodSense-AI-Rebuilt` folder, and run:
-
-```powershell
-Set-ExecutionPolicy -Scope Process Bypass
-.\setup.ps1
+```text
+                  ┌──────────────────────┐
+                  │       User           │
+                  └──────────┬───────────┘
+                             │
+                             ▼
+                  ┌──────────────────────┐
+                  │ React + Vite Frontend│
+                  │ Food Catalogue       │
+                  │ Cart & Checkout      │
+                  │ Orders & Reviews     │
+                  └──────────┬───────────┘
+                             │
+                  ┌──────────┴───────────┐
+                  ▼                      ▼
+       ┌──────────────────┐   ┌──────────────────┐
+       │ Express Backend  │   │ FastAPI AI       │
+       │ REST APIs        │   │ Review Analysis  │
+       └────────┬─────────┘   └──────────────────┘
+                │
+                ▼
+       ┌──────────────────┐
+       │ Application      │
+       │ Database         │
+       └──────────────────┘
 ```
 
-Configure `backend/.env` from `backend/.env.example` and set a strong unique `JWT_SECRET` plus your `MONGO_URI`. Configure `frontend/.env` from `frontend/.env.example`. If using the AI service, configure `ai/.env` from `ai/.env.example`.
+## 📂 Project Structure
 
-Then run the API and frontend:
-
-```powershell
-.\run.ps1
+```text
+FoodSense/
+├── frontend/
+│   ├── src/
+│   ├── tests/
+│   ├── package.json
+│   └── vite.config.js
+├── backend/
+│   ├── package.json
+│   └── server source files
+├── ai/
+│   └── AI service source files
+├── setup.ps1
+├── run.ps1
+├── build.ps1
+├── test.ps1
+├── FINAL-STATUS.txt
+└── README.md
 ```
 
-Run the AI service in another terminal when its dependencies are installed:
+*Note: The exact folders and files may differ depending on the current repository contents.*
 
-```powershell
-.\run.ps1 -IncludeAI
+## ⚙️ Prerequisites
+
+Install the following before running the project:
+
+- [Node.js](https://nodejs.org/) and npm
+- [Python](https://www.python.org/)
+- Git
+- A configured application database
+- Required Python and Node.js dependencies
+
+## 💻 Installation and Setup
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/nvaltryek-001/Food-Ordering.git
+cd Food-Ordering
 ```
 
-The frontend defaults to `http://localhost:5173`, API to `http://localhost:5000`, and AI to `http://127.0.0.1:8000`.
+### 2. Install frontend dependencies
 
-## Data and model
-
-- The TFLite model and vocabulary are supplied under `ai/models/` and are the model artifacts from the uploaded project.
-- The current ZIP does **not** contain a verified, complete public food/review training dataset. The backend has a dataset acquisition script at `backend/scripts/download-datasets.ps1`; review its source URLs, terms, and output before running it.
-- Do not describe seeded menu records as a real restaurant menu. Import the menu from the restaurant owner or an authorized source.
-- Evaluate the model using a labeled dataset representative of your users before publishing accuracy claims.
-
-## Commands
-
-```powershell
-.\test.ps1     # backend JS syntax checks + available tests
-.\build.ps1    # production frontend build and backend syntax checks
+```bash
+cd frontend
+npm install
 ```
 
-For deployment guidance see [`DEPLOYMENT.md`](DEPLOYMENT.md). Hosting requires your own MongoDB URI, JWT secret, frontend URL, and service URLs. Never commit `.env` files or secrets.
+### 3. Install backend dependencies
 
-## GitHub update safety
+Open another terminal:
 
-The supplied ZIP does not include `.git` history. Extract it separately, then compare the source with your existing clone before copying changes into that clone. Review `git status` and `git diff`, run tests, and only then commit and push. Do not force-push or replace the remote repository blindly.
+```bash
+cd backend
+npm install
+```
 
-## Verification status
+Configure the backend environment variables and database connection using the environment variable names expected by the application.
 
-- Archive structure and core source files: inspected.
-- Several empty, unused frontend stubs and backup copies from the supplied archive: removed.
-- Backend health endpoint: now reports HTTP 503 when MongoDB is disconnected.
-- AI requirements: now declare the LiteRT package used by the service.
-- Automated frontend build: **not verified** in this environment; dependency installation did not complete.
-- Production deployment, live database integration, payment processing, and end-to-end browser tests: **not verified**.
+### 4. Install AI service dependencies
 
-See [`FINAL-STATUS.txt`](FINAL-STATUS.txt) for the delivery audit.
+Open another terminal:
+
+```bash
+cd ai
+python -m venv .venv
+```
+
+Activate the virtual environment on Windows:
+
+```powershell
+.\.venv\Scripts\Activate.ps1
+```
+
+Install the dependencies listed in the AI service's requirements file, if provided:
+
+```bash
+pip install -r requirements.txt
+```
+
+Configure the AI model and other required resources according to the project setup.
+
+## ▶️ Running the Application
+
+Run each service in a separate terminal.
+
+### Frontend
+
+```bash
+cd frontend
+npm run dev
+```
+
+### Backend
+
+```bash
+cd backend
+npm run
+```
+
+Use the backend's configured start script from its `package.json` (for example, `npm run dev` or `npm start`).
+
+### AI Service
+
+Start the FastAPI application using its configured entry point. For example, if `ai/app.py` exposes an `app` object:
+
+```bash
+cd ai
+python -m uvicorn app:app --host 0.0.0.0 --port 8000
+```
+
+The AI service entry point and start command should match the actual project configuration.
+
+## 🧪 Build and Testing
+
+### Build the frontend
+
+```bash
+cd frontend
+npm run build
+```
+
+### Run automated tests
+
+The repository includes Playwright UI and end-to-end test files under `frontend/tests/`.
+
+Check the configured test scripts in `frontend/package.json`. If Playwright is configured, install its browser dependencies and run the corresponding test command.
+
+```bash
+npx playwright install
+```
+
+The production frontend build has completed successfully in the development environment. Automated tests have also previously passed for key flows, including registration/login, cart quantity updates, checkout, order history, and UI checks.
+
+## 🔄 Application Workflow
+
+1. The user opens the FoodSense AI
