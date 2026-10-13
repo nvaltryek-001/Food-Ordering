@@ -1,16 +1,14 @@
-﻿import express from "express";
+import express from "express";
 import mongoose from "mongoose";
 
 const router = express.Router();
 
 router.get("/", (req, res) => {
-  res.json({
-    status: "ok",
+  const connected = mongoose.connection.readyState === 1;
+  res.status(connected ? 200 : 503).json({
+    status: connected ? "ok" : "degraded",
     service: "FoodSense AI Backend",
-    database:
-      mongoose.connection.readyState === 1
-        ? "connected"
-        : "disconnected",
+    database: connected ? "connected" : "disconnected",
     timestamp: new Date().toISOString()
   });
 });

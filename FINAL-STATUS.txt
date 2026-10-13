@@ -1,64 +1,40 @@
-﻿============================================================
-FOODSENSE AI - FINAL PROJECT STATUS
-============================================================
+FOODSENSE AI — ZIP REBUILD AUDIT
+================================
 
-FRONTEND
---------
-React/Vite                 : READY
-npm install                : READY
-npm run build              : PASSED
+SOURCE AUDIT
+------------
+- Web frontend: React 19 + Vite + React Router, with a large single-file application UI in frontend/src/App.jsx.
+- Backend: Node.js/Express, MongoDB/Mongoose, JWT authentication, food/order/review/analytics routes.
+- AI: FastAPI service intended to run the bundled TFLite review-sentiment model and vocabulary.
+- Android: original customer and manager Android projects preserved.
+- Original archive did not contain Git history.
 
-BACKEND
--------
-Node/Express               : READY
-MongoDB                    : READY
-Authentication             : READY
-Food API                   : READY
-Order API                  : READY
-Review API                 : READY
-Analytics                  : READY
+CHANGES IN THIS PACKAGE
+-----------------------
+- Removed backup source copies and IDE metadata.
+- Removed empty, unreferenced web UI stub files; current web UI is composed in App.jsx.
+- Removed duplicate AI model/vocabulary copies; canonical files remain under ai/models/ and Android model assets remain.
+- Added root README, setup.ps1, run.ps1, test.ps1, build.ps1.
+- Added architecture and API documentation.
+- Updated health endpoint to report a disconnected database as degraded (HTTP 503).
+- Added ai-edge-litert to AI requirements because app.py imports its interpreter.
 
 DATASET
 -------
-Indian Food Dataset        : IMPORT ATTEMPTED
-Review Dataset             : NORMALIZED
-MongoDB Food Catalog       : IMPORTED/VERIFIED
+- The supplied archive contains a TFLite model and vocabulary, not a verified full labeled training dataset.
+- A backend dataset download script is retained, but dataset source/license/data quality were not independently verified in this environment.
+- Production menu data must be provided by the authorized restaurant/menu owner.
+- No model accuracy claim is made.
 
-ORIGINAL PROJECT FLOW
----------------------
-Login                      : READY
-QR Scanner                 : ADDED
-Menu                       : READY
-Cart                       : READY
-Payment                    : DEMO FLOW
-Order                      : READY
-Manager Accept             : TESTED
-Preparing                  : TESTED
-Served                     : TESTED
-Review                     : TESTED
-Sentiment                  : CONNECTED TO AI SERVICE
-Food Score                 : EXISTING BACKEND LOGIC
-Menu Ranking               : EXISTING BACKEND LOGIC
-Analytics                  : READY
+VERIFICATION
+------------
+- Archive tree inspected and cleanup performed.
+- Frontend build could not be verified: npm dependency installation did not complete in this environment; subsequent build reported Vite unavailable.
+- Production build, database-backed integration tests, live AI inference, Android builds, and remote deployment are not verified.
+- Configure secrets and external services locally before using the application.
 
-AI
---
-Original TFLite model      : LOCATED IF PRESENT
-Original vocabulary        : LOCATED IF PRESENT
-FastAPI AI service         : CREATED
-TFLite inference           : ENABLED ONLY IF MODEL LOADS
-Fallback sentiment         : AVAILABLE
-
-DEPLOYMENT
-----------
-Frontend                  : Vercel
-Backend                   : Render
-Database                  : MongoDB Atlas
-AI service                : Separate Python service
-
-IMPORTANT
----------
-Do not deploy localhost MongoDB.
-Do not put secrets in frontend.
-Do not claim RNN accuracy until real inference has been tested.
-============================================================
+IMPORTANT LIMITATIONS
+--------------------
+- Payment is a demo flow, not a real payment gateway.
+- Production readiness is not certified.
+- Review model quality must be evaluated with a representative labeled test set.
