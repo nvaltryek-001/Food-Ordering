@@ -1,8 +1,5 @@
-﻿node_modules/
-**/node_modules/
-
+node_modules
 .venv/
-**/.venv/
 __pycache__/
 *.pyc
 
@@ -12,28 +9,11 @@ __pycache__/
 
 dist/
 build/
-**/dist/
-**/build/
+
+# runtime database (re-seeded automatically on first start)
+backend/data/runtime/
 
 *.log
-npm-debug.log*
-yarn-debug.log*
-
-.vscode/
-.idea/
-
 .DS_Store
-Thumbs.db
-
-*.tmp
-*.temp
-
-# Large datasets
-*.csv
-*.tsv
-*.zip
-
-# Local databases
-*.db
-*.sqlite
-*.sqlite3
+.idea/
+.vscode/

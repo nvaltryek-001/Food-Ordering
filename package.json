@@ -1,0 +1,17 @@
+{
+  "name": "foodsense",
+  "version": "2.0.0",
+  "private": true,
+  "description": "FoodSense AI — QR table ordering for restaurants with live kitchen tracking and AI review sentiment",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "setup": "npm --prefix frontend install && npm --prefix backend install",
+    "dev": "node scripts/dev.mjs",
+    "build": "npm --prefix frontend run build",
+    "start": "npm --prefix backend start",
+    "test": "npm --prefix backend test",
+    "seed": "npm --prefix backend run seed",
+    "data": "npm --prefix backend run data",
+    "demo:record": "python3 scripts/demo/record_demo.py"
+  }
+}
