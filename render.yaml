@@ -1,22 +1,15 @@
-﻿services:
+services:
   - type: web
-    name: foodsense-ai-backend
+    name: foodsense
     runtime: node
-    rootDir: backend
-    buildCommand: npm install
+    plan: free
+    buildCommand: npm run setup && npm run build
     startCommand: npm start
     healthCheckPath: /api/health
-    autoDeploy: true
     envVars:
       - key: NODE_ENV
         value: production
-      - key: PORT
-        value: 10000
-      - key: MONGO_URI
-        sync: false
       - key: JWT_SECRET
-        sync: false
-      - key: CLIENT_URL
-        sync: false
-      - key: AI_SERVICE_URL
-        sync: false
+        generateValue: true
+      - key: NODE_VERSION
+        value: "22"

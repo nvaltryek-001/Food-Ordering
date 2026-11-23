@@ -1,0 +1,26 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Retrain model and rebuild menu from the raw datasets
+        run: npm run data
+      - name: API tests
+        run: npm test
+      - name: Install and build frontend
+        run: npm run setup && npm run build
+      - name: Smoke test the production server
+        run: |
+          npm start &
+          for i in $(seq 1 20); do curl -fs localhost:5000/api/health && break; sleep 1; done
+          curl -fs localhost:5000/ | grep -q '<div id="root">'
+          curl -fs "localhost:5000/api/dishes?q=dosa" | grep -q "Masala Dosa"

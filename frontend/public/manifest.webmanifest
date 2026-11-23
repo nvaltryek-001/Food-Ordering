@@ -1,0 +1,1 @@
+{ "name": "FoodSense", "short_name": "FoodSense", "start_url": "/", "display": "standalone", "background_color": "#f4f6f0", "theme_color": "#123d2a", "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }] }

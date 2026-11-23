@@ -1,29 +1,18 @@
 {
-  "name": "foodsense-ai-backend",
-  "version": "1.0.0",
-  "description": "FoodSense AI - Food Ordering and Review Analyzer Backend",
+  "name": "foodsense-backend",
+  "version": "2.0.0",
+  "private": true,
+  "description": "FoodSense AI — REST + realtime API for QR table ordering and AI review analysis",
   "type": "module",
-  "main": "server.js",
+  "main": "src/server.js",
+  "engines": { "node": ">=20" },
   "scripts": {
-    "dev": "nodemon server.js",
-    "start": "node server.js",
-    "seed": "node scripts/seed.js",
-    "datasets": "powershell -ExecutionPolicy Bypass -File scripts/download-datasets.ps1",
-    "normalize": "node scripts/normalize-datasets.js"
-  },
-  "dependencies": {
-    "axios": "^1.20.0",
-    "bcryptjs": "^3.0.2",
-    "cors": "^2.8.5",
-    "dotenv": "^17.2.2",
-    "express": "^5.1.0",
-    "express-rate-limit": "^8.1.0",
-    "helmet": "^8.1.0",
-    "jsonwebtoken": "^9.0.2",
-    "mongoose": "^8.18.0",
-    "morgan": "^1.10.0"
-  },
-  "devDependencies": {
-    "nodemon": "^3.1.10"
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "data:menu": "node scripts/build-menu.js",
+    "data:train": "node scripts/train-sentiment.js",
+    "data": "npm run data:menu && npm run data:train",
+    "seed": "node scripts/seed.js --force",
+    "test": "node --test test/*.test.js"
   }
 }
